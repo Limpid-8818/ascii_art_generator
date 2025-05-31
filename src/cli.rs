@@ -3,7 +3,13 @@ use clap::{Arg, Command};
 use clap::builder::TypedValueParser;
 use crate::ascii_mapping::AsciiConfig;
 
-pub fn parse_args() -> Result<AsciiConfig, Box<dyn Error>> {
+pub struct CliArgs {
+    pub input_path: String,
+    pub output_path: Option<String>,
+    pub config: AsciiConfig,
+}
+
+pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
     let matches = Command::new("ASCII Art Generator")
         .version("0.1.0")
         .author("Limpid")
@@ -41,6 +47,19 @@ pub fn parse_args() -> Result<AsciiConfig, Box<dyn Error>> {
         )
         .get_matches();
 
+    let input_path = matches
+        .get_one::<String>("input")
+        .ok_or_else(|| "Input file is required.")?
+        .clone();
+
+    let output_path_ref = matches
+        .get_one::<String>("output");
+
+    let output_path= match output_path_ref {
+        Some(s) => Some(s.clone()),
+        None => None
+    };
+
     let width = matches
         .get_one::<String>("width")
         .and_then(|w| w.parse::<u32>().ok())
@@ -53,13 +72,17 @@ pub fn parse_args() -> Result<AsciiConfig, Box<dyn Error>> {
     let gamma = matches.get_one::<String>("gamma")
         .and_then(|g| g.parse::<f32>().ok())
         .ok_or_else(|| "Invalid gamma value")?;
-    
+
     let config = AsciiConfig {
         width,
         height,
         gamma,
         ..AsciiConfig::default()
     };
-    
-    Ok(config)
+
+    Ok(CliArgs {
+        input_path,
+        output_path,
+        config
+    })
 }
