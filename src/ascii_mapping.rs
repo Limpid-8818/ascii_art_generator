@@ -4,20 +4,24 @@ use image::{GenericImageView, Pixel};
 
 const DEFAULT_CHARSET: &'static str = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 
+const ANSI_RESET: &str = "\x1b[0m";
+
 pub struct AsciiConfig {
     pub width: u32,
     pub height: u32,
     pub gamma: f32,
     pub charset: String,
+    pub color: bool,
 }
 
 impl Default for AsciiConfig {
     fn default() -> Self {
         AsciiConfig {
-            width: 50,
+            width: 80,
             height: 0,
             gamma: 1.0,
-            charset: DEFAULT_CHARSET.to_string()
+            charset: DEFAULT_CHARSET.to_string(),
+            color: false,
         }
     }
 }
@@ -35,9 +39,9 @@ impl AsciiMapper {
         let mut ascii_art = String::new();
 
         let width = self.config.width;
-        let height = if self.config.height == 0 { 
+        let height = if self.config.height == 0 {
             self.dynamic_height(img)
-        } else { 
+        } else {
             self.config.height
         };
         let gamma = self.config.gamma;
@@ -71,8 +75,18 @@ impl AsciiMapper {
 
                 let mut luminance = Self::rgb_to_luminance(avg_r, avg_g, avg_b);
                 luminance = Self::apply_gamma_correction(luminance, gamma);
+
+                let ascii_char = self.luminance_to_ascii(luminance);
                 
-                ascii_art.push(self.luminance_to_ascii(luminance))
+                if self.config.color {
+                    // 添加 ANSI 转义序列实现彩色输出
+                    let color_code = format!("\x1B[38;2;{};{};{}m", avg_r, avg_g, avg_b);
+                    ascii_art.push_str(&color_code);
+                    ascii_art.push(ascii_char);
+                    ascii_art.push_str(ANSI_RESET);
+                } else {
+                    ascii_art.push(ascii_char);
+                }
             }
             ascii_art.push('\n')
         }

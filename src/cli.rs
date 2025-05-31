@@ -52,6 +52,13 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
                 .value_name("GAMMA")
                 .default_value("1.0"),
         )
+        .arg(
+            Arg::new("color")
+                .short('c')
+                .long("color")
+                .help("Enable color output")
+                .action(clap::ArgAction::SetTrue),
+        )
         .get_matches();
 
     let input_path = matches
@@ -80,10 +87,13 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
         .and_then(|g| g.parse::<f32>().ok())
         .ok_or_else(|| "Invalid gamma value")?;
 
+    let color = matches.get_flag("color");
+
     let config = AsciiConfig {
         width,
         height,
         gamma,
+        color,
         ..AsciiConfig::default()
     };
 
