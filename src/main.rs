@@ -1,4 +1,5 @@
 mod ascii_mapping;
+mod cli;
 
 use image::io::Reader as ImageReader;
 use image::DynamicImage;

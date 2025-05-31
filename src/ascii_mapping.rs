@@ -15,7 +15,7 @@ impl Default for AsciiConfig {
     fn default() -> Self {
         AsciiConfig {
             width: 50,
-            height: 50,
+            height: 0,
             gamma: 1.0,
             charset: DEFAULT_CHARSET.to_string()
         }
