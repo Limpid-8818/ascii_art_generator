@@ -1,5 +1,6 @@
 mod ascii_mapping;
 mod cli;
+mod custom_charset_util;
 
 use crate::ascii_mapping::AsciiMapper;
 use crate::cli::parse_args;
