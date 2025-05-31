@@ -2,15 +2,40 @@ use std::string::String;
 use std::error::Error;
 use image::{GenericImageView, Pixel};
 
-const DEFAULT_CHARSET: &'static str = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
-
 const ANSI_RESET: &str = "\x1b[0m";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Charset {
+    SIMPLE,
+    DEFAULT,
+}
+
+impl Charset {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Charset::SIMPLE => " .:-=+*#%@",
+            Charset::DEFAULT => " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
+        }
+    }
+}
+
+impl std::str::FromStr for Charset {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "DEFAULT" => Ok(Charset::DEFAULT),
+            "SIMPLE" => Ok(Charset::SIMPLE),
+            _ => Err(format!("不支持或未定义的字符集: {s}"))
+        }
+    }
+}
 
 pub struct AsciiConfig {
     pub width: u32,
     pub height: u32,
     pub gamma: f32,
-    pub charset: String,
+    pub charset: Charset,
     pub color: bool,
 }
 
@@ -20,7 +45,7 @@ impl Default for AsciiConfig {
             width: 80,
             height: 0,
             gamma: 1.0,
-            charset: DEFAULT_CHARSET.to_string(),
+            charset: Charset::DEFAULT,
             color: false,
         }
     }
@@ -77,7 +102,7 @@ impl AsciiMapper {
                 luminance = Self::apply_gamma_correction(luminance, gamma);
 
                 let ascii_char = self.luminance_to_ascii(luminance);
-                
+
                 if self.config.color {
                     // 添加 ANSI 转义序列实现彩色输出
                     let color_code = format!("\x1B[38;2;{};{};{}m", avg_r, avg_g, avg_b);
@@ -103,7 +128,7 @@ impl AsciiMapper {
     }
 
     fn luminance_to_ascii(&self, luminance: u32) -> char {
-        let charset = self.config.charset.chars().collect::<Vec<char>>();
+        let charset = self.config.charset.as_str().chars().collect::<Vec<char>>();
         let index = (luminance as f32 * charset.len() as f32 / 255.0) as usize;
         charset[index.min(charset.len() - 1)]
     }

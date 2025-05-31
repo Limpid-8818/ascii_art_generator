@@ -1,7 +1,6 @@
 use std::error::Error;
 use clap::{Arg, Command};
-use clap::builder::TypedValueParser;
-use crate::ascii_mapping::AsciiConfig;
+use crate::ascii_mapping::{AsciiConfig, Charset};
 
 pub struct CliArgs {
     pub input_path: String,
@@ -11,7 +10,7 @@ pub struct CliArgs {
 
 pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
     let matches = Command::new("ASCII Art Generator")
-        .version("0.1.0")
+        .version("v0.1.0")
         .author("Limpid")
         .about("A Tool for Converting Images to ASCII Art")
         .arg(
@@ -59,6 +58,12 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
                 .help("Enable color output")
                 .action(clap::ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("charset")
+                .long("charset")
+                .help("Character set to use (default or simple)")
+                .default_value("default")
+        )
         .get_matches();
 
     let input_path = matches
@@ -89,11 +94,16 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
 
     let color = matches.get_flag("color");
 
+    let charset = matches.get_one::<String>("charset")
+        .and_then(|s| s.parse::<Charset>().ok())
+        .ok_or_else(|| "Invalid charset value.")?;
+
     let config = AsciiConfig {
         width,
         height,
         gamma,
         color,
+        charset,
         ..AsciiConfig::default()
     };
 
