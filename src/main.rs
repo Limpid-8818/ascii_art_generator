@@ -1,25 +1,25 @@
 mod ascii_mapping;
 mod cli;
 
-use image::io::Reader as ImageReader;
-use image::DynamicImage;
 use crate::ascii_mapping::{AsciiConfig, AsciiMapper};
+use crate::cli::parse_args;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 加载图片
-    let img: DynamicImage = ImageReader::open("images/b746283d2fbb9a42eb02250c0f39f1d2.jpeg")?.decode()?;
+    let args = parse_args()?;
 
-    // 创建默认配置
-    let config = AsciiConfig::default();
+    let img = image::open(&args.input_path)?;
 
-    // 创建ASCII映射器
-    let mapper = AsciiMapper::new(config);
+    let mapper = AsciiMapper::new(args.config);
 
-    // 将图片转换为ASCII艺术
     let ascii_art = mapper.image_to_ascii(&img)?;
 
-    // 打印ASCII艺术
-    println!("{}", ascii_art);
-
+    if let Some(output_path) = args.output_path {
+        let path = output_path.clone();
+        std::fs::write(output_path, ascii_art)?;
+        println!("ASCII Art saved to {}", path);
+    } else { 
+        println!("{}", ascii_art);
+    }
+    
     Ok(())
 }

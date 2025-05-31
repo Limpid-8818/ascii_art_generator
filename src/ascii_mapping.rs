@@ -35,7 +35,11 @@ impl AsciiMapper {
         let mut ascii_art = String::new();
 
         let width = self.config.width;
-        let height = self.config.height;
+        let height = if self.config.height == 0 { 
+            self.dynamic_height(img)
+        } else { 
+            self.config.height
+        };
         let gamma = self.config.gamma;
 
         let width_ratio = img.width() as f32 / width as f32;
@@ -88,5 +92,11 @@ impl AsciiMapper {
         let charset = self.config.charset.chars().collect::<Vec<char>>();
         let index = (luminance as f32 * charset.len() as f32 / 255.0) as usize;
         charset[index.min(charset.len() - 1)]
+    }
+
+    fn dynamic_height(&self, image: &image::DynamicImage) -> u32 {
+        let aspect_ratio = image.height() as f32 / image.width() as f32;
+        let calculated_height = (self.config.width as f32 * aspect_ratio) as u32;
+        calculated_height
     }
 }
