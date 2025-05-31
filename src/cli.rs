@@ -23,6 +23,13 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
                 .value_name("FILE"),
         )
         .arg(
+            Arg::new("output")
+                .short('o')
+                .long("output")
+                .help("Output path")
+                .value_name("FILE"),
+        )
+        .arg(
             Arg::new("width")
                 .short('w')
                 .long("width")
@@ -32,7 +39,7 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
         )
         .arg(
             Arg::new("height")
-                .short('h')
+                .short('t')
                 .long("height")
                 .help("Height of the output ASCII art")
                 .value_name("HEIGHT"),

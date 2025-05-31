@@ -1,7 +1,7 @@
 mod ascii_mapping;
 mod cli;
 
-use crate::ascii_mapping::{AsciiConfig, AsciiMapper};
+use crate::ascii_mapping::AsciiMapper;
 use crate::cli::parse_args;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
