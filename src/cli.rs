@@ -59,6 +59,13 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("invert")
+                .short('v')
+                .long("invert")
+                .help("Invert the character set")
+                .action(clap::ArgAction::SetTrue)
+        )
+        .arg(
             Arg::new("charset")
                 .long("charset")
                 .help("Character set to use (default or simple)")
@@ -94,6 +101,8 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
         .ok_or_else(|| "Invalid gamma value")?;
 
     let color = matches.get_flag("color");
+    
+    let invert = matches.get_flag("invert");
 
     let charset = matches.get_one::<String>("charset")
         .and_then(|s| s.parse::<Charset>().ok())
@@ -105,6 +114,7 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
         gamma,
         color,
         charset,
+        invert,
         ..AsciiConfig::default()
     };
 

@@ -37,6 +37,7 @@ pub struct AsciiConfig {
     pub gamma: f32,
     pub charset: Charset,
     pub color: bool,
+    pub invert: bool,
 }
 
 impl Default for AsciiConfig {
@@ -47,6 +48,7 @@ impl Default for AsciiConfig {
             gamma: 1.0,
             charset: Charset::DEFAULT,
             color: false,
+            invert: false,
         }
     }
 }
@@ -119,7 +121,7 @@ impl AsciiMapper {
         Ok(ascii_art)
     }
 
-    fn rgb_to_luminance(r: u32, g:u32, b: u32) -> u32 {
+    fn rgb_to_luminance(r: u32, g: u32, b: u32) -> u32 {
         (0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32) as u32
     }
 
@@ -128,7 +130,11 @@ impl AsciiMapper {
     }
 
     fn luminance_to_ascii(&self, luminance: u32) -> char {
-        let charset = self.config.charset.as_str().chars().collect::<Vec<char>>();
+        let charset = if self.config.invert {
+            self.config.charset.as_str().chars().rev().collect::<Vec<char>>()
+        } else {
+            self.config.charset.as_str().chars().collect::<Vec<char>>()
+        };
         let index = (luminance as f32 * charset.len() as f32 / 255.0) as usize;
         charset[index.min(charset.len() - 1)]
     }
