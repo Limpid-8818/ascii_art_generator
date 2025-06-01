@@ -5,11 +5,11 @@ mod output_handler;
 
 use crate::ascii_mapping::AsciiMapper;
 use crate::cli::parse_args;
-use crate::output_handler::save_ascii_art_to_file;
+use crate::output_handler::OutputHandler;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args()?;
-    
+
     let config = args.config.clone();
 
     let img = image::open(&args.input_path)?;
@@ -19,7 +19,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ascii_art = mapper.image_to_ascii(&img)?;
 
     if let Some(output_path) = args.output_path {
-        save_ascii_art_to_file(&ascii_art, &output_path, &config)?;
+        let handler = OutputHandler::from_path(&output_path)?;
+        handler.save_ascii_art_to_file(&ascii_art, &output_path, &config)?;
     } else { 
         println!("{}", ascii_art);
     }
