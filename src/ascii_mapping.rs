@@ -33,6 +33,7 @@ impl std::str::FromStr for Charset {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct AsciiConfig {
     pub width: u32,
     pub height: u32,
