@@ -8,6 +8,8 @@ const ANSI_RESET: &str = "\x1b[0m";
 pub enum Charset {
     SIMPLE,
     DEFAULT,
+    BLOCK,
+    PIXEL,
     CUSTOM,
 }
 
@@ -16,6 +18,8 @@ impl Charset {
         match self {
             Charset::SIMPLE => " .:-=+*#%@",
             Charset::DEFAULT => " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
+            Charset::BLOCK => "▁▂▃▄▅▆▇█",
+            Charset::PIXEL => "█",
             Charset::CUSTOM => "",
         }
     }
@@ -28,6 +32,8 @@ impl std::str::FromStr for Charset {
         match s.to_uppercase().as_str() {
             "DEFAULT" => Ok(Charset::DEFAULT),
             "SIMPLE" => Ok(Charset::SIMPLE),
+            "BLOCK" => Ok(Charset::BLOCK),
+            "PIXEL" => Ok(Charset::PIXEL),
             _ => Err(format!("不支持或未定义的字符集: {s}"))
         }
     }

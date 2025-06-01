@@ -69,7 +69,7 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
         .arg(
             Arg::new("charset")
                 .long("charset")
-                .help("Character set to use (default or simple)")
+                .help("Character set to use (default, simple, block or pixel)")
                 .value_name("CHARSET")
                 .default_value("default")
         )
