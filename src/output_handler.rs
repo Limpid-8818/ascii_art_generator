@@ -2,6 +2,7 @@ use crate::ascii_mapping::{AsciiConfig, Charset};
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
+use std::path::PathBuf;
 
 pub trait AsciiArtOutputFormat {
     fn write_to(&self, writer: &mut File, ascii_art: &str, config: &AsciiConfig) -> Result<(), Box<dyn Error>>;
@@ -41,15 +42,28 @@ impl OutputHandler {
         Self {format}
     }
 
-    pub fn from_path(output_path: &str) -> Result<Self, Box<dyn Error>> {
-        let format: Result<Box<dyn AsciiArtOutputFormat>, Box<dyn Error>> = match output_path.split('.').last() {
-            Some("txt") => Ok(Box::new(TxtFormat)),
-            Some(ext) => Err(format!("Unsupported file extension: {}", ext).into()),
-            None => Err("No file extension provided".into()),
+    pub fn from_path(mut output_path: String) -> Result<(Self, String), Box<dyn Error>> {
+        let mut path = PathBuf::from(&output_path);
+
+        // 检查是否有扩展名
+        let has_extension = path.extension().is_some();
+
+        // 如果没有扩展名，添加默认扩展名".txt"
+        let format = if !has_extension {
+            let default_format = TxtFormat;
+            path.set_extension(default_format.file_extension());
+            output_path = path.to_string_lossy().into();
+            Box::new(default_format) as Box<dyn AsciiArtOutputFormat>
+        } else {
+            // 根据扩展名选择格式
+            match path.extension().and_then(|s| s.to_str()) {
+                Some("txt") => Box::new(TxtFormat) as Box<dyn AsciiArtOutputFormat>,
+                Some(ext) => return Err(format!("Unsupported file extension: .{}", ext).into()),
+                None => return Err("Failed to parse file extension".into()),
+            }
         };
 
-        let format = format?;
-        Ok(Self::new(format))
+        Ok((Self::new(format), output_path))
     }
 
     pub fn save_ascii_art_to_file(&self, ascii_art: &str, output_path: &str, ascii_config: &AsciiConfig) -> Result<(), Box<dyn Error>> {
