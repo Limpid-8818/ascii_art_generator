@@ -1,6 +1,7 @@
 use std::error::Error;
 use clap::{Arg, Command};
 use crate::ascii_mapping::{AsciiConfig, Charset};
+use crate::custom_charset_util::sort_charset_by_density;
 
 pub struct CliArgs {
     pub input_path: String,
@@ -72,6 +73,12 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
                 .value_name("CHARSET")
                 .default_value("default")
         )
+        .arg(
+            Arg::new("custom-charset")
+                .long("custom-charset")
+                .help("Custom Character set to use ([option: --charset] will be ignored)")
+                .value_name("CHARSET")
+        )
         .get_matches();
 
     let input_path = matches
@@ -104,9 +111,22 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
     
     let invert = matches.get_flag("invert");
 
-    let charset = matches.get_one::<String>("charset")
-        .and_then(|s| s.parse::<Charset>().ok())
-        .ok_or_else(|| "Invalid charset value.")?;
+    let mut custom_charset = matches.get_one::<String>("custom-charset")
+        .unwrap_or(&String::new())
+        .clone();
+    
+    let charset = if custom_charset.is_empty() {
+        matches.get_one::<String>("charset")
+            .and_then(|s| s.parse::<Charset>().ok())
+            .ok_or_else(|| "Invalid charset value.")?
+    } else { 
+        Charset::CUSTOM
+    };
+    
+    // 自定义字符集处理
+    if !custom_charset.is_empty() { 
+        custom_charset = sort_charset_by_density(custom_charset);
+    }
 
     let config = AsciiConfig {
         width,
@@ -114,6 +134,7 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
         gamma,
         color,
         charset,
+        custom_charset,
         invert,
         ..AsciiConfig::default()
     };

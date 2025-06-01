@@ -8,6 +8,7 @@ const ANSI_RESET: &str = "\x1b[0m";
 pub enum Charset {
     SIMPLE,
     DEFAULT,
+    CUSTOM,
 }
 
 impl Charset {
@@ -15,6 +16,7 @@ impl Charset {
         match self {
             Charset::SIMPLE => " .:-=+*#%@",
             Charset::DEFAULT => " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
+            Charset::CUSTOM => "",
         }
     }
 }
@@ -36,6 +38,7 @@ pub struct AsciiConfig {
     pub height: u32,
     pub gamma: f32,
     pub charset: Charset,
+    pub custom_charset: String,
     pub color: bool,
     pub invert: bool,
 }
@@ -47,6 +50,7 @@ impl Default for AsciiConfig {
             height: 0,
             gamma: 1.0,
             charset: Charset::DEFAULT,
+            custom_charset: String::new(),
             color: false,
             invert: false,
         }
@@ -130,11 +134,20 @@ impl AsciiMapper {
     }
 
     fn luminance_to_ascii(&self, luminance: u32) -> char {
-        let charset = if self.config.invert {
-            self.config.charset.as_str().chars().rev().collect::<Vec<char>>()
+        let charset = if self.config.charset == Charset::CUSTOM {
+            if self.config.invert {
+                self.config.custom_charset.chars().rev().collect::<Vec<char>>()
+            } else {
+                self.config.custom_charset.chars().collect::<Vec<char>>()
+            }
         } else {
-            self.config.charset.as_str().chars().collect::<Vec<char>>()
+            if self.config.invert {
+                self.config.charset.as_str().chars().rev().collect::<Vec<char>>()
+            } else {
+                self.config.charset.as_str().chars().collect::<Vec<char>>()
+            }
         };
+
         let index = (luminance as f32 * charset.len() as f32 / 255.0) as usize;
         charset[index.min(charset.len() - 1)]
     }
