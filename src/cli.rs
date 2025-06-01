@@ -11,7 +11,7 @@ pub struct CliArgs {
 
 pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
     let matches = Command::new("ASCII Art Generator")
-        .version("v0.1.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .author("Limpid")
         .about("A Tool for Converting Images to ASCII Art")
         .arg(
@@ -26,7 +26,7 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
             Arg::new("output")
                 .short('o')
                 .long("output")
-                .help("Output path")
+                .help("Output path (supports .txt(default), .json, .html extensions)")
                 .value_name("FILE"),
         )
         .arg(
@@ -108,23 +108,23 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
         .ok_or_else(|| "Invalid gamma value")?;
 
     let color = matches.get_flag("color");
-    
+
     let invert = matches.get_flag("invert");
 
     let mut custom_charset = matches.get_one::<String>("custom-charset")
         .unwrap_or(&String::new())
         .clone();
-    
+
     let charset = if custom_charset.is_empty() {
         matches.get_one::<String>("charset")
             .and_then(|s| s.parse::<Charset>().ok())
             .ok_or_else(|| "Invalid charset value.")?
-    } else { 
+    } else {
         Charset::CUSTOM
     };
-    
+
     // 自定义字符集处理
-    if !custom_charset.is_empty() { 
+    if !custom_charset.is_empty() {
         custom_charset = sort_charset_by_density(custom_charset);
     }
 
