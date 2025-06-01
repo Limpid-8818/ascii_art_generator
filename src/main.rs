@@ -1,9 +1,11 @@
 mod ascii_mapping;
 mod cli;
 mod custom_charset_util;
+mod output_handler;
 
 use crate::ascii_mapping::AsciiMapper;
 use crate::cli::parse_args;
+use crate::output_handler::save_ascii_art_to_file;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args()?;
@@ -15,9 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ascii_art = mapper.image_to_ascii(&img)?;
 
     if let Some(output_path) = args.output_path {
-        let path = output_path.clone();
-        std::fs::write(output_path, ascii_art)?;
-        println!("ASCII Art saved to {}", path);
+        save_ascii_art_to_file(&ascii_art, &output_path)?;
     } else { 
         println!("{}", ascii_art);
     }
