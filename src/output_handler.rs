@@ -6,7 +6,9 @@ use std::io::Write;
 use std::path::PathBuf;
 use ansi_to_html::Converter;
 use html_escape::encode_text;
+use image::Rgb;
 use serde::{Deserialize, Serialize};
+use crate::ascii_to_image::AsciiToImageRenderer;
 
 pub trait AsciiArtOutputFormat {
     fn write_to(&self, writer: &mut File, ascii_art: &str, config: &AsciiConfig) -> Result<(), Box<dyn Error>>;
@@ -16,6 +18,10 @@ pub trait AsciiArtOutputFormat {
 pub struct TxtFormat;
 pub struct JsonFormat;
 pub struct HtmlFormat;
+
+pub struct ImageFormat {
+    extension: String,
+}
 
 impl AsciiArtOutputFormat for TxtFormat {
     fn write_to(&self, writer: &mut File, ascii_art: &str, ascii_config: &AsciiConfig) -> Result<(), Box<dyn Error>> {
@@ -231,6 +237,37 @@ fn count_lines(s: &str) -> u32 {
     }
 }
 
+impl AsciiArtOutputFormat for ImageFormat {
+    fn write_to(&self, writer: &mut File, ascii_art: &str, config: &AsciiConfig) -> Result<(), Box<dyn Error>> {
+        let mut renderer = AsciiToImageRenderer::new(config.clone(), 32)?
+            .with_colors(
+                Rgb([0x0C, 0x0C, 0x0C]),
+                Rgb([0xCC, 0xCC, 0xCC])
+            );
+
+        let img = renderer.render_ascii_to_image(ascii_art);
+
+        let format = match self.file_extension() {
+            "png" => image::ImageFormat::Png,
+            "jpg" | "jpeg" => image::ImageFormat::Jpeg,
+            _ => image::ImageFormat::Png,
+        };
+
+        img?.write_to(writer, format)?;
+
+        Ok(())
+    }
+
+    fn file_extension(&self) -> &str {
+        match self.extension.as_str() {
+            "jpg" => "jpg",
+            "jpeg" => "jpeg",
+            "png" => "png",
+            _ => "png",
+        }
+    }
+}
+
 pub struct OutputHandler {
     format: Box<dyn AsciiArtOutputFormat>,
 }
@@ -258,6 +295,7 @@ impl OutputHandler {
                 Some("txt") => Box::new(TxtFormat) as Box<dyn AsciiArtOutputFormat>,
                 Some("json") => Box::new(JsonFormat) as Box<dyn AsciiArtOutputFormat>,
                 Some("html") => Box::new(HtmlFormat) as Box<dyn AsciiArtOutputFormat>,
+                Some("png" | "jpg" | "jpeg") => Box::new(ImageFormat {extension: path.extension().and_then(|ext| ext.to_str()).unwrap().to_string() }),
                 Some(ext) => return Err(format!("Unsupported file extension: .{}", ext).into()),
                 None => return Err("Failed to parse file extension".into()),
             }

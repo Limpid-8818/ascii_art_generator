@@ -3,6 +3,7 @@ mod cli;
 mod custom_charset_util;
 mod output_handler;
 mod gif_to_ascii;
+mod ascii_to_image;
 
 use crate::ascii_mapping::AsciiMapper;
 use crate::cli::parse_args;
@@ -32,7 +33,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             println!("{}", ascii_art);
         }
-        
     }
     
     Ok(())
