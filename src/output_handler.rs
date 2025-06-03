@@ -1,14 +1,14 @@
 use crate::ascii_mapping::{AsciiConfig, Charset};
+use crate::ascii_to_image::AsciiToImageRenderer;
+use ansi_to_html::Converter;
+use html_escape::encode_text;
+use image::Rgb;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs::File;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
-use ansi_to_html::Converter;
-use html_escape::encode_text;
-use image::Rgb;
-use serde::{Deserialize, Serialize};
-use crate::ascii_to_image::AsciiToImageRenderer;
 
 pub trait AsciiArtOutputFormat {
     fn write_to(&self, writer: &mut File, ascii_art: &str, config: &AsciiConfig) -> Result<(), Box<dyn Error>>;

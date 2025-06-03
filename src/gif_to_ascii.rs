@@ -1,6 +1,8 @@
 use crate::ascii_mapping::{AsciiConfig, AsciiMapper};
-use image::codecs::gif::GifDecoder;
-use image::AnimationDecoder;
+use crate::ascii_to_image::AsciiToImageRenderer;
+use image::codecs::gif::Repeat::Infinite;
+use image::codecs::gif::{GifDecoder, GifEncoder};
+use image::{AnimationDecoder, Delay, Frame, ImageBuffer, Rgba};
 use std::error::Error;
 use std::{
     fs::File,
@@ -9,16 +11,16 @@ use std::{
     time::Duration,
 };
 
-pub struct GifAsciiPlayer {
+pub struct GifAsciiHandler {
     config: AsciiConfig,
 }
 
-impl GifAsciiPlayer {
+impl GifAsciiHandler {
     pub fn new(config: AsciiConfig) -> Self {
-        GifAsciiPlayer { config }
+        GifAsciiHandler { config }
     }
 
-    pub fn play_gif(&self, path: &str, loops: Option<u32>) -> Result<(), Box<dyn Error>> {
+    fn gif_to_ascii(&self, path: &str) -> Result<(Vec<String>, Vec<u64>), Box<dyn Error>> {
         let file = File::open(path)?;
         let buf_reader = BufReader::new(file);
         let decoder = GifDecoder::new(buf_reader)?;
@@ -36,6 +38,12 @@ impl GifAsciiPlayer {
             let delay = frame.delay().numer_denom_ms().0 as u64;
             delays.push(delay);
         }
+
+        Ok((ascii_frames, delays))
+    }
+
+    pub fn play_gif(&self, path: &str, loops: Option<u32>) -> Result<(), Box<dyn Error>> {
+        let (ascii_frames, delays) = self.gif_to_ascii(path)?;
 
         let stdout = io::stdout();
         let mut handle = stdout.lock();
@@ -56,8 +64,41 @@ impl GifAsciiPlayer {
         Ok(())
     }
 
+    pub fn export_to_gif(&self, input_path: &str, output_path: &str) -> Result<(), Box<dyn Error>> {
+        let (ascii_frames, delays) = self.gif_to_ascii(input_path)?;
+
+        let file = File::create(output_path)?;
+        let mut encoder = GifEncoder::new(file);
+        encoder.set_repeat(Infinite)?;
+
+        println!("Total Frames: {}", ascii_frames.len());
+        let mut count = 0;
+        for (frame, delay) in ascii_frames.into_iter().zip(delays) {
+            let img = self.ascii_frame_to_img(&frame)?;
+            let new_frame = Frame::from_parts(img, 0, 0, Delay::from_saturating_duration(Duration::from_millis(delay)));
+            encoder.encode_frame(new_frame)?;
+            println!("Render Frame {count} Succeed");
+            count += 1;
+        }
+        
+        Ok(())
+    }
+
     fn config_to_ascii(&self, img: &image::DynamicImage) -> Result<String, Box<dyn Error>> {
         let mapper = AsciiMapper::new(self.config.clone());
         mapper.image_to_ascii(img)
+    }
+
+    fn ascii_frame_to_img(&self, ascii: &str) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>, Box<dyn Error>> {
+        let mut renderer = AsciiToImageRenderer::new(self.config.clone(), 16)?;
+        let img = renderer.render_ascii_to_image(ascii)?;
+        let mut rgba_img = ImageBuffer::new(img.width(), img.height());
+        for (x, y, pixel) in img.enumerate_pixels() {
+            let rgba_pixel = Rgba([pixel[0], pixel[1], pixel[2], 255]);
+            rgba_img.put_pixel(x, y, rgba_pixel);
+        }
+        let img = rgba_img;
+
+        Ok(img)
     }
 }
