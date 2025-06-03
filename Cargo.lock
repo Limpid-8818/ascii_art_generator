@@ -10,6 +10,7 @@ dependencies = [
  "clap",
  "html-escape",
  "image",
+ "rayon",
  "rusttype",
  "serde",
  "serde_json",

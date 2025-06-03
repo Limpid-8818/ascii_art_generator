@@ -3,7 +3,10 @@ use crate::ascii_to_image::AsciiToImageRenderer;
 use image::codecs::gif::Repeat::Infinite;
 use image::codecs::gif::{GifDecoder, GifEncoder};
 use image::{AnimationDecoder, Delay, Frame, ImageBuffer, Rgba};
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::ParallelIterator;
 use std::error::Error;
+use std::time::Instant;
 use std::{
     fs::File,
     io::{self, BufReader, Write},
@@ -66,21 +69,41 @@ impl GifAsciiHandler {
 
     pub fn export_to_gif(&self, input_path: &str, output_path: &str) -> Result<(), Box<dyn Error>> {
         let (ascii_frames, delays) = self.gif_to_ascii(input_path)?;
+        println!("Total Frames: {}", ascii_frames.len());
 
         let file = File::create(output_path)?;
         let mut encoder = GifEncoder::new(file);
         encoder.set_repeat(Infinite)?;
 
-        println!("Total Frames: {}", ascii_frames.len());
-        let mut count = 0;
-        for (frame, delay) in ascii_frames.into_iter().zip(delays) {
-            let img = self.ascii_frame_to_img(&frame)?;
-            let new_frame = Frame::from_parts(img, 0, 0, Delay::from_saturating_duration(Duration::from_millis(delay)));
+        let timer = Instant::now();
+
+        // 并行处理图像
+        let frames_with_index: Vec<(usize, ImageBuffer<Rgba<u8>, Vec<u8>>)> = (0..ascii_frames.len())
+            .into_par_iter() // 转换为并行迭代器
+            .map(|i| {
+                let img = self.ascii_frame_to_img(&ascii_frames[i]).expect("Failed to convert ASCII frame to image");
+                (i, img)
+            })
+            .collect();
+
+        // 根据原始索引对图像进行排序，确保顺序正确（Rayon库提供的并行迭代器大多数情况下不会改变顺序，但还是排序一下以确保不出错）
+        let mut frames: Vec<ImageBuffer<Rgba<u8>, Vec<u8>>> = vec![ImageBuffer::new(0, 0); frames_with_index.len()];
+        for (index, frame) in frames_with_index {
+            frames[index] = frame;
+        }
+
+        let mut count = 1;
+        // 编码GIF
+        for (frame, delay) in frames.into_iter().zip(delays) {
+            let sub_timer = Instant::now();
+            let new_frame = Frame::from_parts(frame, 0, 0, Delay::from_saturating_duration(Duration::from_millis(delay)));
             encoder.encode_frame(new_frame)?;
-            println!("Render Frame {count} Succeed");
+            println!("Render Frame {}/{} succeed in {}", count, ascii_frames.len() , format_duration(sub_timer.elapsed()));
             count += 1;
         }
-        
+
+        println!("Rendering finished in {}", format_duration(timer.elapsed()));
+
         Ok(())
     }
 
@@ -100,5 +123,34 @@ impl GifAsciiHandler {
         let img = rgba_img;
 
         Ok(img)
+    }
+}
+
+fn format_duration(d: Duration) -> String {
+    let secs = d.as_secs();
+    let millis = d.subsec_millis();
+    let micros = d.subsec_micros() % 1000;
+    let nanos = d.subsec_nanos() % 1000;
+
+    if secs >= 60 {
+        let minutes = secs / 60;
+        let remaining_secs = secs % 60;
+        if remaining_secs > 0 || millis > 0 {
+            format!(
+                "{}m{:.2}s",
+                minutes,
+                remaining_secs as f64 + millis as f64 * 1e-3
+            )
+        } else {
+            format!("{}m", minutes)
+        }
+    } else if secs > 0 {
+        format!("{:.2}s", secs as f64 + millis as f64 * 1e-3)
+    } else if millis > 0 {
+        format!("{:.2}ms", millis as f64 + micros as f64 * 1e-3)
+    } else if micros > 0 {
+        format!("{}μs", micros)
+    } else {
+        format!("{}ns", nanos)
     }
 }
