@@ -39,6 +39,8 @@ cd ascii_art_generator
 cargo build --release
 ```
 
+如果你使用的是 Windows 环境，你也可以选择直接下载 `Release` 版本。
+
 
 
 ### 使用方法
