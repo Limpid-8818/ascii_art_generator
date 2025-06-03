@@ -26,7 +26,7 @@ pub fn parse_args() -> Result<CliArgs, Box<dyn Error>> {
             Arg::new("output")
                 .short('o')
                 .long("output")
-                .help("Output path (supports .txt(default), .json, .html, .jpg, .jpeg, .png extensions)")
+                .help("Output path (supports .txt(default), .json, .html, .jpg, .jpeg, .png, .gif(only for gif input) extensions)")
                 .value_name("FILE"),
         )
         .arg(
