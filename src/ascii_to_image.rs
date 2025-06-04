@@ -1,8 +1,6 @@
 use crate::ascii_mapping::AsciiConfig;
 use image::{ImageBuffer, Rgb};
 use rusttype::{Font, Scale};
-use std::fs::File;
-use std::io::Read;
 
 pub struct AsciiToImageRenderer {
     config: AsciiConfig,
@@ -14,9 +12,7 @@ pub struct AsciiToImageRenderer {
 
 impl AsciiToImageRenderer {
     pub fn new(config: AsciiConfig, font_size: u32) -> Result<Self, Box<dyn std::error::Error>> {
-        let mut font_data = Vec::new();
-        File::open("./res/DejaVuSansMono.ttf")?
-            .read_to_end(&mut font_data)?;
+        let font_data = include_bytes!("../res/DejaVuSansMono.ttf").to_vec();
 
         Ok(Self {
             config,
